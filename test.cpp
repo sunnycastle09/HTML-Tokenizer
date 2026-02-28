@@ -10,13 +10,27 @@ int main() {
 }
 void tokenizer(std::string file_name) {
 	char c;
-	std::string state="Data";
+	std::string state="DOCTYPE";
 	std::string character_buffer = "";
 	std::string tagname_buffer="";
+	std::string attribute_buffer = "";
 	std::ifstream inFile(file_name); //html 파일 읽기
 	std::ofstream outFile("token.txt");//token 파일 쓰기
 	while (inFile.get(c)) {
-		if (state == "Data") {
+		if (state=="DOCTYPE") {
+			if (c != '<') {
+				if (c == '>') {
+					outFile << "DOCTYPE:" << character_buffer << "\n";
+					std::cout << "DOCTYPE:" << character_buffer << "\n";
+					character_buffer = "";
+					state = "Data";
+				}
+				else {
+					character_buffer += c;
+				}
+			}
+		}
+		else if (state == "Data") {
 			if (c == '<') {
 				state = "Tag Open";
 			}
@@ -31,6 +45,12 @@ void tokenizer(std::string file_name) {
 					std::cout << "StartTag:" << tagname_buffer << "\n";
 					tagname_buffer = "";
 					state = "Data";
+				}
+				else if (c==' ') {
+					outFile << "StartTag:" << tagname_buffer << "\n";
+					std::cout << "StartTag:" << tagname_buffer << "\n";
+					tagname_buffer = "";
+					state = "Attribute Name";
 				}
 				else {
 					tagname_buffer += c;
@@ -64,18 +84,48 @@ void tokenizer(std::string file_name) {
 				character_buffer += c;
 			}
 		}
+		else if (state == "Attribute Name") {
+			if (c == '>') {
+				outFile << "Attribute Name:" << attribute_buffer << "\n";
+				std::cout << "Attribute Name:" << attribute_buffer << "\n";
+				attribute_buffer = "";
+				state = "Data";
+			}
+			else if (c != '=') {
+				attribute_buffer += c;
+			}
+			else {
+				outFile << "Attribute Name:" << attribute_buffer << "\n";
+				std::cout << "Attribute Name:" << attribute_buffer << "\n";
+				attribute_buffer = "";
+				state = "Attribute Value";
+			}
+		}
+		else if (state == "Attribute Value") {
+			if (c != '\"') {//속성 값에서 큰따음표 뺴기위해
+				if (c==' ') {
+					outFile << "Attribute Value:" << attribute_buffer << "\n";
+					std::cout << "Attribute Value:" << attribute_buffer << "\n";
+					attribute_buffer = "";
+					state = "Attribute Name";
+				}
+				else if (c == '>') {
+					outFile << "Attribute Value:" << attribute_buffer << "\n";
+					std::cout << "Attribute Value:" << attribute_buffer << "\n";
+					attribute_buffer = "";
+					state = "Data";
+				}
+				else {
+					attribute_buffer += c;
+				}
+			}
+		}
 
-
-
-	}	
+	}
 }
 int Alphabet(char a) {
-	for (int i = 97; i < 123; i++) {
-		if (a == char(i)) {
-			return 1;
-		}
-		if (i == 122) {
-			return 0;
-		}
+	if ((a >= 97 && a <= 122) || (a >= 65 && a <= 90)) {
+		return 1;
 	}
+	return 0;
 }
