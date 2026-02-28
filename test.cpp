@@ -1,77 +1,74 @@
-﻿#include <iostream>
-#include <string>
+#include <iostream>
+#include <fstream>
 
-void tokenizer(char cp);
+void tokenizer(std::string file_name);
 int Alphabet(char a);
-std::string html;
-std::string state = "data";
-std::string tagname_buffer;
-std::string text_buffer;
-std::string attribute_key;
-std::string attribute_value;
-int temp = 0;
-int main()
-{
-	std::getline(std::cin, html);
-	for (int i = 0; i < html.size(); i++) {
-		tokenizer(html[i]);
-	}
+
+int main() {
+	std::string a = "index.html";
+	tokenizer(a);
 }
-void tokenizer(char cp)
-{
-	if (state == "data") {
-		if (cp == '<') {
-			state = "tag open";
+void tokenizer(std::string file_name) {
+	char c;
+	std::string state="Data";
+	std::string character_buffer = "";
+	std::string tagname_buffer="";
+	std::ifstream inFile(file_name); //html 파일 읽기
+	std::ofstream outFile("token.txt");//token 파일 쓰기
+	while (inFile.get(c)) {
+		if (state == "Data") {
+			if (c == '<') {
+				state = "Tag Open";
+			}
+			else if (Alphabet(c)) {
+				state = "Character"; character_buffer += c;
+			}
 		}
-		else if (Alphabet(cp)) {
-			state = "data";
-			text_buffer += cp;
+		else if (state=="Tag Open") {
+			if (c != '/') {
+				if (c == '>') {
+					outFile << "StartTag:" << tagname_buffer << "\n";
+					std::cout << "StartTag:" << tagname_buffer << "\n";
+					tagname_buffer = "";
+					state = "Data";
+				}
+				else {
+					tagname_buffer += c;
+				}
+			}
+			else {
+				state = "Tag Close";
+			}
 		}
-	}
-	else if (state == "tag open") {
-		if (cp == ' ') {
-			state = "attribute key";
+		else if (state == "Tag Close") {
+			if (c != '/') {// tag close에서 /문자 담기는건 피하기 위해
+				if (c == '>') {
+					outFile << "EndTag:" << tagname_buffer << "\n";
+					std::cout << "EndTag:" << tagname_buffer << "\n";
+					tagname_buffer = "";
+					state = "Data";
+				}
+				else {
+					tagname_buffer += c;
+				}
+			}
 		}
-		else if (cp == '>') {
-			std::cout << "tagOpen:" << tagname_buffer << "\n";
-			state = "data";
+		else if (state == "Character") {
+			if (c == '<') {
+				outFile << "Character:" << character_buffer << "\n";
+				std::cout << "Character:" << character_buffer << "\n";
+				character_buffer = "";
+				state = "Tag Close";
+			}
+			else {
+				character_buffer += c;
+			}
 		}
-		else if (cp == '/') {
-			std::cout << text_buffer << "\ntagClose:" << tagname_buffer << "\n";
-			tagname_buffer = "";
-			state = "data";
-		}
-		else {
-			tagname_buffer += cp;
-		}
-	}
-	else if (state == "attribute key") {
-		if (cp == '=') {
-			state = "attribute value";
-			std::cout << "attribute key:" << attribute_key << "\n";
-			attribute_key = "";
-		}
-		else {
-			attribute_key += cp;
-		}
-	}
-	else if (state == "attribute value") {
-		if (cp == '\"' && temp == 1) {
-			attribute_value += cp;
-			state = "tag open";
-			std::cout << "attribute value:" << attribute_value << "\n";
-			attribute_value = "";
-			temp = 0;
-		}
-		else {
-			attribute_value += cp;
-			temp = 1;
-		}
-	}
 
+
+
+	}	
 }
-
-
 int Alphabet(char a) {
 	for (int i = 97; i < 123; i++) {
 		if (a == char(i)) {
