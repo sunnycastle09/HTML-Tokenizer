@@ -8,16 +8,19 @@ int main() {
 	std::string a = "index.html";
 	tokenizer(a);
 }
+
+
 void tokenizer(std::string file_name) {
 	char c;
-	std::string state="DOCTYPE";
+	bool is_first = true;
+	std::string state = "DOCTYPE";
 	std::string character_buffer = "";
-	std::string tagname_buffer="";
+	std::string tagname_buffer = "";
 	std::string attribute_buffer = "";
 	std::ifstream inFile(file_name); //html 파일 읽기
 	std::ofstream outFile("token.txt");//token 파일 쓰기
 	while (inFile.get(c)) {
-		if (state=="DOCTYPE") {
+		if (state == "DOCTYPE") {
 			if (c != '<') {
 				if (c == '>') {
 					outFile << "DOCTYPE:" << character_buffer << "\n";
@@ -34,11 +37,11 @@ void tokenizer(std::string file_name) {
 			if (c == '<') {
 				state = "Tag Open";
 			}
-			else if (Alphabet(c)) {
+			else {
 				state = "Character"; character_buffer += c;
 			}
 		}
-		else if (state=="Tag Open") {
+		else if (state == "Tag Open") {
 			if (c != '/') {
 				if (c == '>') {
 					outFile << "StartTag:" << tagname_buffer << "\n";
@@ -46,7 +49,7 @@ void tokenizer(std::string file_name) {
 					tagname_buffer = "";
 					state = "Data";
 				}
-				else if (c==' ') {
+				else if (c == ' ') {
 					outFile << "StartTag:" << tagname_buffer << "\n";
 					std::cout << "StartTag:" << tagname_buffer << "\n";
 					tagname_buffer = "";
@@ -102,22 +105,28 @@ void tokenizer(std::string file_name) {
 			}
 		}
 		else if (state == "Attribute Value") {
-			if (c != '\"') {//속성 값에서 큰따음표 뺴기위해
-				if (c==' ') {
+			if (!is_first) {
+				if (c == '\"') {
 					outFile << "Attribute Value:" << attribute_buffer << "\n";
 					std::cout << "Attribute Value:" << attribute_buffer << "\n";
 					attribute_buffer = "";
-					state = "Attribute Name";
-				}
-				else if (c == '>') {
-					outFile << "Attribute Value:" << attribute_buffer << "\n";
-					std::cout << "Attribute Value:" << attribute_buffer << "\n";
-					attribute_buffer = "";
-					state = "Data";
+					state = "After Attribute Value";
+					is_first = true;
 				}
 				else {
 					attribute_buffer += c;
 				}
+			}
+			else {
+				is_first = false;
+			}
+		}
+		else if (state == "After Attribute Value") {
+			if (c == '>') {
+				state = "Data";
+			}
+			else if (c == ' ') {
+				state = "Attribute Name";
 			}
 		}
 
